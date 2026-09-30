@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aftellen naar kerst</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#06060A;--card:#0f0f16;--line:#23232f;--text:#f4f1ea;--muted:#9a98a6;--red:#e5394b;--gold:#e8c468}
+:root[data-theme="dark"]{--bg:#06060A}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:inherit}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;overflow-x:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+main{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:48px 20px 40px;text-align:center}
+.tag{display:inline-block;padding:6px 14px;border:1px solid var(--line);border-radius:99px;color:var(--gold);font-size:.85rem;letter-spacing:.04em}
+h1{font-size:clamp(2rem,7vw,3.6rem);line-height:1.1;margin:22px 0 12px}
+h1 span{color:var(--red)}
+p.sub{color:var(--muted);max-width:520px;margin:0 auto 34px;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 6px}
+.num{font-size:clamp(2rem,9vw,3.8rem);font-weight:700;font-variant-numeric:tabular-nums;color:var(--gold)}
+.lbl{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin-top:6px}
+.player{margin-top:34px;display:flex;flex-direction:column;align-items:center;gap:12px}
+button,label.btn{background:var(--red);color:#fff;border:0;border-radius:99px;padding:14px 28px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit}
+button:hover,label.btn:hover{filter:brightness(1.1)}
+label.btn{background:transparent;border:1px solid var(--line);color:var(--muted);font-size:.85rem;padding:9px 18px;font-weight:500}
+input[type=file]{display:none}
+#msg{color:var(--muted);font-size:.85rem;min-height:1.2em}
+footer{margin-top:40px;color:var(--muted);font-size:.8rem}
+.done .grid{display:none}
+#party{display:none;font-size:clamp(1.6rem,6vw,2.6rem);color:var(--gold);margin:10px 0}
+.done #party{display:block}
+</style>
+</head>
+<body>
+<canvas id="snow"></canvas>
+<main id="app">
+  <span class="tag">🎄 Kerst 2026</span>
+  <h1>Nog even en het is <span>kerst</span></h1>
+  <p class="sub">Zet de muziek aan, leun achterover en tel mee tot 25 december.</p>
+  <div id="party">Vrolijk kerstfeest! 🎁</div>
+  <div class="grid">
+    <div class="box"><div class="num" id="d">0</div><div class="lbl">Dagen</div></div>
+    <div class="box"><div class="num" id="h">0</div><div class="lbl">Uren</div></div>
+    <div class="box"><div class="num" id="m">0</div><div class="lbl">Minuten</div></div>
+    <div class="box"><div class="num" id="s">0</div><div class="lbl">Seconden</div></div>
+  </div>
+  <div class="player">
+    <button id="play">▶ Kerstmuziek aan</button>
+    <label class="btn">Werkt de muziek niet? Kies je mp3<input type="file" id="file" accept="audio/*"></label>
+    <div id="msg"></div>
+  </div>
+  <footer>Aftellen tot 25 december, 00:00</footer>
+  <audio id="au" loop preload="none" src="https://cdn.discordapp.com/attachments/1094724682416128032/1554948713846280223/xmas.mp3?backend=b2&ex=6abebe56&is=6abd6cd6&hm=2edd3f7cfbe3d7f243a81227098df230768dc0452807bcef8eca351586c11f39&"></audio>
+</main>
+<script>
+(function(){
+  var app=document.getElementById('app');
+  function target(){var n=new Date(),y=n.getFullYear(),t=new Date(y,11,25,0,0,0);
+    if(n-t>24*3600*1000)t=new Date(y+1,11,25,0,0,0);return t;}
+  var T=target();
+  function pad(x){return x<10?'0'+x:''+x}
+  function tick(){
+    var diff=T-new Date();
+    if(diff<=0&&diff>-24*3600*1000){app.classList.add('done');return;}
+    if(diff<=-24*3600*1000){T=target();diff=T-new Date();}
+    app.classList.remove('done');
+    var s=Math.floor(diff/1000);
+    document.getElementById('d').textContent=Math.floor(s/86400);
+    document.getElementById('h').textContent=pad(Math.floor(s%86400/3600));
+    document.getElementById('m').textContent=pad(Math.floor(s%3600/60));
+    document.getElementById('s').textContent=pad(s%60);
+  }
+  tick();setInterval(tick,1000);
+
+  var au=document.getElementById('au'),btn=document.getElementById('play'),msg=document.getElementById('msg'),on=false;
+  function setBtn(){btn.textContent=on?'⏸ Muziek pauzeren':'▶ Kerstmuziek aan'}
+  btn.onclick=function(){
+    if(on){au.pause();on=false;setBtn();return;}
+    au.load();
+    var p=au.play();
+    if(p&&p.then)p.then(function(){on=true;setBtn();msg.textContent='';}).catch(function(){
+      msg.textContent='De muziek kon niet laden. Kies hieronder je mp3-bestand.';});
+  };
+  au.onerror=function(){msg.textContent='De muziek kon niet laden. Kies hieronder je mp3-bestand.';on=false;setBtn();};
+  document.getElementById('file').onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    au.src=URL.createObjectURL(f);
+    au.play().then(function(){on=true;setBtn();msg.textContent='Speelt: '+f.name;}).catch(function(){});
+  };
+
+  var c=document.getElementById('snow'),x=c.getContext('2d'),W,H,fl=[];
+  function size(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  size();addEventListener('resize',size);
+  for(var i=0;i<90;i++)fl.push({x:Math.random()*2000,y:Math.random()*1200,r:Math.random()*2.4+.6,v:Math.random()*.8+.3,o:Math.random()*.5+.2});
+  function draw(){
+    x.clearRect(0,0,W,H);
+    for(var i=0;i<fl.length;i++){var f=fl[i];
+      f.y+=f.v;f.x+=Math.sin(f.y/40)*.3;
+      if(f.y>H){f.y=-5;f.x=Math.random()*W;}
+      x.globalAlpha=f.o;x.fillStyle='#fff';x.beginPath();x.arc(f.x%W,f.y,f.r,0,6.3);x.fill();}
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>
